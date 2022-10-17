@@ -1,3 +1,5 @@
+####import packages
+
 import codecs
 import os
 from bs4 import BeautifulSoup
@@ -17,6 +19,8 @@ PROJECT_ROOT = os.path.abspath(os.getcwd())
 DRIVER_BIN = os.path.join(PROJECT_ROOT, "chromedriver")
 options = webdriver.ChromeOptions()
 
+####def html extraction
+
 def extract_data_from_page(url, path, options):
     #driver = webdriver.Chrome(executable_path=path, options=options)
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
@@ -26,3 +30,254 @@ def extract_data_from_page(url, path, options):
     page = driver.page_source
     driver.quit()
     return page
+
+####Create DF
+# Launch only at the start of data collection process!
+colnames = ['price', 'condominio', 'anno', 'state', 
+            'heat', 'cold', 'energy','energyef',
+            'avaliable_from','contratto','tipologia',
+            'squarem','rooms','bath','floor','buildsize','garage',
+            'distr','street',
+            'hyperlink','detected_language','additionalchar','agency','text']
+df = pd.DataFrame([], columns=colnames)
+
+# Otherwise just load
+# df = pd.read_csv('ryanair_price_data.csv', sep='\t')
+
+
+####create list of links
+
+
+lst=[]
+    
+    
+for q in range(1,81): 
+    url = ('https://www.immobiliare.it/affitto-case/milano/?pag='+str(q)+'&idMZona[]=10047&idMZona[]=10057&idMZona[]=10059&idMZona[]=10050&idMZona[]=10046&idMZona[]=10049&idMZona[]=10056&idMZona[]=10053&idMZona[]=10061&idMZona[]=10060&idQuartiere[]=12801')
+    
+
+    page = extract_data_from_page(url, DRIVER_BIN, options)
+    soup = BeautifulSoup(page, 'html.parser')
+    
+    
+    for link in soup.html.body.find_all("a", class_="in-card__title"):
+        a=link.get('href')
+        lst.append(a)
+        
+for q in range(1,81): 
+    url = ('https://www.immobiliare.it/affitto-case/milano/?pag='+str(q)+'&idMZona[]=10070&idMZona[]=10069&idMZona[]=10293&idMZona[]=10068&idMZona[]=10067&idMZona[]=10321&idMZona[]=10066&idMZona[]=10054&idMZona[]=10055&idMZona[]=10318&idMZona[]=10296&idMZona[]=10072&idMZona[]=10064&idMZona[]=10065&idMZona[]=10292&idMZona[]=10320&idMZona[]=10319&idMZona[]=10294&idMZona[]=10317&idMZona[]=10295&idMZona[]=10316&idMZona[]=10071')
+    
+
+    page = extract_data_from_page(url, DRIVER_BIN, options)
+    soup = BeautifulSoup(page, 'html.parser')
+    
+    
+    for link in soup.html.body.find_all("a", class_="in-card__title"):
+        a=link.get('href')
+        lst.append(a)
+        
+
+####browse list of links
+
+#o = len(lst)
+#print(o)    
+  
+#t=0
+
+####browse through hyperlinks 
+
+for hyperlink in lst:
+
+    url = (hyperlink)
+
+    page = extract_data_from_page(url, DRIVER_BIN, options)
+    soup = BeautifulSoup(page, 'html.parser')
+    
+    rows = []
+    
+    # Collecting the information from the page
+        
+    try:
+        price = (soup.html.body.find("dt", string=("prezzo")).next_sibling.next_sibling.string.text.strip('€\n /mese.'))
+    except:
+        price = None
+        
+    try:
+        bath = soup.html.find(string=("bagno")).parent.parent.text.strip('€\n /bagno.')
+    except:
+        bath = None
+            
+    try:
+        condominio = (soup.html.body.find("dt", string=("spese condominio")).next_sibling.next_sibling.string.text.strip('€\n /mese.'))
+    except:
+        condominio = None
+            
+    try:
+        anno = int(soup.html.body.find("dt", string=("anno di costruzione")).next_sibling.next_sibling.string.text.strip('€\n /mese.'))
+    except:
+        anno = None
+        
+    try:
+        state = soup.html.body.find("dt", string=("stato")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        state = None
+            
+    try:
+        heat = soup.html.body.find("dt", string=("riscaldamento")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        heat = None
+            
+    try:
+        cold = soup.html.body.find("dt", string=("Climatizzatore")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        cold = None
+          
+    try:
+        energy = soup.html.body.find("dt", string=("Indice prest. energetica rinnovabile")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        energy = None
+    
+    try:
+        contratto = soup.html.body.find("dt", string=("contratto")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        contratto = None
+        
+    try:
+        avaliable_from = soup.html.body.find("dt", string=("riferimento e Data annuncio")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        avaliable_from = None
+        
+    try:
+        contratto = soup.html.body.find("dt", string=("contratto")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        contratto = None
+        
+    try:
+        tipologia = soup.html.body.find("dt", string=("tipologia")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        tipologia = None
+        
+    try:
+        squarem = soup.html.body.find("dt", string=("superficie")).next_sibling.next_sibling.text.strip('€\n /mese.').strip('- Vedi dettaglio').strip('\t').strip('\n')
+    except:
+        squarem = None
+        
+    try:
+        rooms = soup.html.body.find("dt", string=("locali")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        rooms = None
+        
+    try:
+        floor = soup.html.body.find("dt", string=("piano")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        floor = None
+        
+    try:
+        buildsize = soup.html.body.find("dt", string=("totale piani edificio")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        buildsize = None
+        
+    try:
+        Prov = soup.html.body.find("span",class_=("im-titleBlock__title")).next_sibling.next_sibling.find(class_="im-location").string.strip('€\n /mese. ')
+    except:
+        Prov = None
+                                                                                                                                                  
+    try:
+        distr = soup.html.body.find("span",class_=("im-titleBlock__title")).next_sibling.next_sibling.find(class_="im-location").next_sibling.string.strip('€\n /mese. ')
+    except:
+        distr = None  
+        
+    try:
+        street = soup.html.body.find("span",class_=("im-titleBlock__title")).next_sibling.next_sibling.find(class_="im-location").next_sibling.next_sibling.string.strip('€\n /mese. ')
+    except:
+        street = None
+    
+    try:
+        energyef = soup.html.body.find("span", class_=("im-features__energy")).next_sibling.string.text.strip('€\n /mese.')
+    except:
+        energyef = None
+    
+    try:
+        garage = soup.html.body.find("dt", string=("Posti Auto")).next_sibling.next_sibling.string.text.strip('€\n /mese.')
+    except:
+        garage = None
+    try:
+        agency = soup.html.body.find("div",class_=("im-lead__reference")).find("p").text
+    except:
+        agency = None
+    
+    ####detection of language
+    try:
+        language=soup.html.find("div",class_=("im-description__text js-readAllText")).get_text()
+    
+        text_content = language
+        _, _, _, detected_language = cld2.detect(text_content,  returnVectors=True)
+    except:
+        detected_language = None 
+        
+    ###### download additional attributes from page
+    try:
+        additionalchar=[' ', soup.find("span", class_="im-features__tag").text.strip()]
+        for sibling in soup.find("span", class_="im-features__tag").next_siblings:
+            output = sibling.text.strip()
+            additionalchar.append(output)
+
+        del additionalchar[::2]
+        additionalchar = ';'.join(additionalchar)
+    except:
+        additionalchar = None
+    try:
+        text = soup.html.find("div",class_=("im-description__text js-readAllText")).get_text().strip('\n ')
+    except:
+        text = None
+
+
+ 
+    ####create a row
+    
+    row = [
+            price, 
+            condominio,
+            anno, 
+            state,
+            heat,
+            cold,
+            energy,
+            energyef,
+            avaliable_from,
+            contratto,
+            tipologia,
+            squarem,
+            rooms,
+            bath,
+            floor,
+            buildsize,
+            garage,
+            distr,
+            street,
+            hyperlink,
+            detected_language,
+            additionalchar,
+            agency,
+            text
+        ]
+    rows.append(row)
+    
+    #####count how many links are left
+    t=t+1
+    p=o-t
+    
+    print(str(p))
+    
+    # Add new records to the dataframe
+    df = pd.concat([df, pd.DataFrame(rows, columns=colnames)], axis=0)
+    df = df.reset_index(drop=True)
+
+
+
+#### Look what we got
+#df.drop_duplicates(subset=None, keep='first', inplace=False, ignore_index=False)
+#save to csv fille
+## df.to_csv('milan_immobiliare_python_clean.csv', sep=';', index=False)
+
+
+
