@@ -17,3 +17,12 @@ PROJECT_ROOT = os.path.abspath(os.getcwd())
 DRIVER_BIN = os.path.join(PROJECT_ROOT, "chromedriver")
 options = webdriver.ChromeOptions()
 
+def extract_data_from_page(url, path, options):
+    #driver = webdriver.Chrome(executable_path=path, options=options)
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+    driver.get(url)
+    time.sleep(5)
+   
+    page = driver.page_source
+    driver.quit()
+    return page
