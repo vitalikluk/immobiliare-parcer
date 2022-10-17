@@ -1,0 +1,96 @@
+####import packages
+import codecs
+import os
+from bs4 import BeautifulSoup
+import re
+import pandas as pd
+from datetime import datetime, date
+import time
+import pycld2 as cld2
+
+import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+
+
+####import DF
+
+
+df = pd.read_csv("milan_immobiliare_python_clean.csv",sep=';')
+
+####clean the DF
+
+df["price"] = df["price"].str.replace(".","")
+df["condominio"] = df["condominio"].str.replace(".","")
+df["buildsize"] = df["buildsize"].str.replace("piani","")
+df["squarem"] = df["squarem"].str.replace(".","")
+df["squarem"] = df["squarem"].str.replace(",","")
+df["floor"]=df["floor"].str.replace("1 piano: ","")
+df["squarem"] = df["squarem"].str.replace(" m²","")
+df['language_en'] = df['detected_language'].str.contains('en')
+df['language_it'] = df['detected_language'].str.contains('it')
+df['elevator'] = df['floor'].str.contains('con ascensor',na=False)
+df['disable'] = df['floor'].str.contains('con accesso disabili',na=False)
+df['student_hate'] = df['text'].str.contains('no studenti',na=False, case=False)
+df['balcony'] = df['additionalchar'].str.contains('balcone',na=False, case=False)
+df['furniture'] = df['additionalchar'].str.contains('arredato',na=False, case=False)
+df['electric_gate'] = df['additionalchar'].str.contains('Cancello elettrico',na=False, case=False)
+df['fiber'] = df['additionalchar'].str.contains('Fibra ottica',na=False, case=False)
+df['video_intercome'] = df['additionalchar'].str.contains('VideoCitofono',na=False, case=False)
+df['alarm'] = df['additionalchar'].str.contains('Impianto di allarme',na=False, case=False)
+df['security_door'] = df['additionalchar'].str.contains('Porta blindata',na=False, case=False)
+df['Esposizione_interna'] = df['additionalchar'].str.contains('Esposizione interna ',na=False, case=False)
+df['full_day_conc'] = df['additionalchar'].str.contains('Portiere intera giornata',na=False, case=False)
+df['centrl_TV'] = df['additionalchar'].str.contains('Impianto tv centralizzato',na=False, case=False)
+df['comm_garden'] = df['additionalchar'].str.contains('Giardino comune',na=False, case=False)
+df['Double_glazed/PVC_windows'] = df['additionalchar'].str.contains('Infissi esterni in doppio vetro / PVC',na=False, case=False)
+df['Terrazza'] = df['additionalchar'].str.contains('Terrazza',na=False, case=False)
+df['single_TV'] = df['additionalchar'].str.contains('Impianto tv singolo',na=False, case=False)
+df['wall_wardrobe'] = df['additionalchar'].str.contains('Armadio a muro',na=False, case=False)
+df['glass/wood_frames'] = df['additionalchar'].str.contains('Infissi esterni in vetro / legno',na=False, case=False)
+df['Cucina'] = df['additionalchar'].str.contains('Kitchen',na=False, case=False)
+df['South'] = df['additionalchar'].str.contains('Esposizione sud',na=False, case=False)
+df['glass/metall_frames'] = df['additionalchar'].str.contains('Infissi esterni in vetro / metallo',na=False, case=False)
+df['half_day_conc'] = df['additionalchar'].str.contains('Portiere mezza giornata',na=False, case=False)
+df['partially_furn'] = df['additionalchar'].str.contains('Parzialmente Arredato',na=False, case=False)
+df['fireplace'] = df['additionalchar'].str.contains('Caminetto',na=False, case=False)
+df['floor']=df["floor"].str.replace("¬∞, ","")
+df['floor']=df["floor"].str.replace("con ascensor","")
+df['floor']=df["floor"].str.replace("con accesso disabili","")
+df['floor']=df["floor"].str.replace("°,","")
+df['floor']=df["floor"].str.replace(" e,","")
+df.drop(df[df['price'] == 'Prezzo su richiesta'].index, inplace = True)
+
+df['price'] = pd.to_numeric(df["price"])
+df["condominio"] = df["condominio"].str.replace("Nessuna spesa condominial","0")
+df['condominio'] = pd.to_numeric(df["condominio"])
+df['percent']=df['condominio'] / df['price'] *100
+colnames=df.columns
+
+df['central_heating']=df['heat'].str.contains('Centralizzato',na=False, case=False)
+df['floor_heating']=df['heat'].str.contains('a pavimento',na=False, case=False)
+df['autonomo_heating']=df['heat'].str.contains('Autonomo',na=False, case=False)
+df['central_cold']=df['cold'].str.contains('Centralizzato',na=False, case=False)
+df['autonomo_cold']=df['cold'].str.contains('Autonomo',na=False, case=False)
+df['referen'] = df['text'].str.contains('referenzi'or'referenze',na=False, case=False)
+df['rm'] = df['agency'].str.contains('roomles',na=False, case=False)
+
+
+
+for u in colnames:
+    u=str(u)
+    try:
+        df[[u]]=df[[u]].fillna(value='missing')
+    except:
+        1==1
+
+df.drop(df[df['squarem'] == 'missing'].index, inplace = True)
+df['squarem'] = df['squarem'].str[:3]
+df.drop(df[df['squarem'] == 'com'].index, inplace = True)
+
+df['squarem'] = pd.to_numeric(df["squarem"])
+df.drop(df[df['squarem'] > 500 ].index, inplace = True)
+df.drop(df[df['price'] > 9999 ].index, inplace = True)
+
