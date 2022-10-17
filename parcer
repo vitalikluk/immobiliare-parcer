@@ -1,0 +1,19 @@
+import codecs
+import os
+from bs4 import BeautifulSoup
+import re
+import pandas as pd
+from datetime import datetime, date
+import time
+import pycld2 as cld2
+
+import requests
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
+
+PROJECT_ROOT = os.path.abspath(os.getcwd())
+DRIVER_BIN = os.path.join(PROJECT_ROOT, "chromedriver")
+options = webdriver.ChromeOptions()
+
